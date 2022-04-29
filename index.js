@@ -40,6 +40,21 @@ async function run() {
             const carDetails = await inventroyCollection.findOne(query);
             res.send(carDetails)
         })
+
+        // ADD NEW CAR 
+        app.post('/inventory', async (req, res) => {
+            const newCar = req.body;
+            const addNewCar = await inventroyCollection.insertOne(newCar);
+            res.send(addNewCar);
+        })
+
+        // DELETE CAR 
+        app.delete('/inventory/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const deleteCar = await inventroyCollection.deleteOne(query);
+            res.send(deleteCar)
+        })
     }
 
     finally {
