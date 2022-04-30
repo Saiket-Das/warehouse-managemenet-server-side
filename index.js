@@ -21,9 +21,12 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     await client.connect()
     const inventroyCollection = client.db('inventory').collection('car');
+    const orderCollection = client.db('usersOrder').collection('order');
 
 
     try {
+
+        /* --------------- INVENTORY ----------------*/
 
         // ALL CAR INVENTORY 
         app.get('/inventory', async (req, res) => {
@@ -56,11 +59,31 @@ async function run() {
             res.send(deleteCar)
         })
 
-        app.update('/inventory/:id', async (req, res) => {
+        app.put('/inventory/:id', async (req, res) => {
             const id = req.params.id;
+
             const query = { quantity: ObjectId(id) };
+            console.log(id)
             const updateQuantity = await inventroyCollection.updateOne(query);
             res.send(updateQuantity)
+        })
+
+
+
+        /* --------------- ORDER ----------------*/
+
+        // NEW ORDER POST 
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            const newOrder = await orderCollection.insertOne(order);
+            res.send(newOrder);
+        })
+        // ORDER GET 
+        app.get('/order', async (req, res) => {
+            const query = {};
+            const cursor = orderCollection.find(query)
+            const cars = await cursor.toArray(cursor)
+            res.send(cars);
         })
     }
 
