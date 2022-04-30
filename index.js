@@ -55,6 +55,13 @@ async function run() {
             const deleteCar = await inventroyCollection.deleteOne(query);
             res.send(deleteCar)
         })
+
+        app.update('/inventory/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { quantity: ObjectId(id) };
+            const updateQuantity = await inventroyCollection.updateOne(query);
+            res.send(updateQuantity)
+        })
     }
 
     finally {
