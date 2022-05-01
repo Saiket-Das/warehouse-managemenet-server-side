@@ -34,20 +34,51 @@ async function run() {
         app.get('/inventory', async (req, res) => {
             // const query = {};
             const email = req.query.email;
+
+
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+
             let query = {};
-            if (email) {
-                const query = { email: email };
+
+            // if (email) {
+            //     const query = { email: email };
+            //     const cursor = inventroyCollection.find(query)
+            //     const result = await cursor.toArray(cursor)
+            //     res.send(result);
+            // }
+
+            // else {
+            // const cursor = inventroyCollection.find(query)
+            // const cars = await cursor.toArray(cursor)
+            // res.send(cars);
+            const cursor = inventroyCollection.find(query);
+
+            let cars;
+            if (!page && !size && !email) {
                 const cursor = inventroyCollection.find(query)
                 const cars = await cursor.toArray(cursor)
-                res.send(cars);
+            }
+            else if (page || size) {
+                // 0 --> skip: 0 get: 0-10(10): 
+                cars = await cursor.skip(page * size).limit(size).toArray();
+            }
+            else {
+                if (email) {
+                    const query = { email: email };
+                    const cursor = inventroyCollection.find(query)
+                    cars = await cursor.toArray();
+
+                    // const result = await cursor.toArray(cursor)
+                    // res.send(result);
+                }
+
+                // cars = await cursor.toArray();
             }
 
-            else {
-                const cursor = inventroyCollection.find(query)
-                const cars = await cursor.toArray(cursor)
-                res.send(cars);
-            }
-        })
+            res.send(cars);
+            // }
+        });
 
         // SINGLE CAR DETAILS 
         app.get('/inventory/:id', async (req, res) => {
@@ -72,6 +103,11 @@ async function run() {
             res.send(deleteCar)
         })
 
+        // PRODUCT COUNT 
+        app.get('/totalCar', async (req, res) => {
+            const count = await inventroyCollection.estimatedDocumentCount();
+            res.send({ count });
+        });
 
         app.put('/inventory/:id', async (req, res) => {
             const id = req.params.id;
