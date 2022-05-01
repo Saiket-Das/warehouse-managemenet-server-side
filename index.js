@@ -28,12 +28,25 @@ async function run() {
 
         /* --------------- INVENTORY ----------------*/
 
-        // ALL CAR INVENTORY 
+
+
+        // ALL CAR INVENTORY
         app.get('/inventory', async (req, res) => {
-            const query = {};
-            const cursor = inventroyCollection.find(query)
-            const cars = await cursor.toArray(cursor)
-            res.send(cars);
+            // const query = {};
+            const email = req.query.email;
+            let query = {};
+            if (email) {
+                const query = { email: email };
+                const cursor = inventroyCollection.find(query)
+                const cars = await cursor.toArray(cursor)
+                res.send(cars);
+            }
+
+            else {
+                const cursor = inventroyCollection.find(query)
+                const cars = await cursor.toArray(cursor)
+                res.send(cars);
+            }
         })
 
         // SINGLE CAR DETAILS 
@@ -59,9 +72,9 @@ async function run() {
             res.send(deleteCar)
         })
 
+
         app.put('/inventory/:id', async (req, res) => {
             const id = req.params.id;
-
             const query = { quantity: ObjectId(id) };
             console.log(id)
             const updateQuantity = await inventroyCollection.updateOne(query);
@@ -78,9 +91,11 @@ async function run() {
             const newOrder = await orderCollection.insertOne(order);
             res.send(newOrder);
         })
-        // ORDER GET 
+
+        // GET ORDER  
         app.get('/order', async (req, res) => {
-            const query = {};
+            const email = req.query.email;
+            const query = { email: email };
             const cursor = orderCollection.find(query)
             const cars = await cursor.toArray(cursor)
             res.send(cars);
