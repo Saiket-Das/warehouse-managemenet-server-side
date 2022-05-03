@@ -22,13 +22,12 @@ async function run() {
     await client.connect()
     const inventoryCollection = client.db('inventory').collection('car');
     const orderCollection = client.db('usersOrder').collection('order');
+    const reviewCollection = client.db('customer').collection('review');
 
 
     try {
 
         /* --------------- INVENTORY ----------------*/
-
-
 
         // ALL CAR INVENTORY
         app.get('/inventory', async (req, res) => {
@@ -55,7 +54,6 @@ async function run() {
                     cars = await cursor.toArray();
                 }
             }
-
             res.send(cars);
         });
 
@@ -89,7 +87,7 @@ async function run() {
         });
 
 
-
+        // MANAGE INVENTORY 
         app.put('/inventory/:id', async (req, res) => {
             const id = req.params.id;
             const updateDetails = req.body;
@@ -160,6 +158,25 @@ async function run() {
             // const query = { email: email };
             const deleteOrder = await orderCollection.deleteOne(query);
             res.send(deleteOrder)
+        })
+
+
+
+
+        /* --------------- CUSTOMER REVIEW ----------------*/
+
+        app.post('/review', async (req, res) => {
+            const order = req.body;
+            const newOrder = await reviewCollection.insertOne(order);
+            res.send(newOrder);
+        })
+
+        // GET ORDER  
+        app.get('/review', async (req, res) => {
+            const query = {};
+            const cursor = reviewCollection.find(query)
+            const cars = await cursor.toArray(cursor)
+            res.send(cars);
         })
     }
 
