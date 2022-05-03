@@ -20,7 +20,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
     await client.connect()
-    const inventroyCollection = client.db('inventory').collection('car');
+    const inventoryCollection = client.db('inventory').collection('car');
     const orderCollection = client.db('usersOrder').collection('order');
 
 
@@ -32,66 +32,45 @@ async function run() {
 
         // ALL CAR INVENTORY
         app.get('/inventory', async (req, res) => {
-            // const query = {};
             const email = req.query.email;
-
 
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
 
             let query = {};
-
-            // if (email) {
-            //     const query = { email: email };
-            //     const cursor = inventroyCollection.find(query)
-            //     const result = await cursor.toArray(cursor)
-            //     res.send(result);
-            // }
-
-            // else {
-            // const cursor = inventroyCollection.find(query)
-            // const cars = await cursor.toArray(cursor)
-            // res.send(cars);
-            const cursor = inventroyCollection.find(query);
+            const cursor = inventoryCollection.find(query);
 
             let cars;
             if (!page && !size && !email) {
-                const cursor = inventroyCollection.find(query)
+                const cursor = inventoryCollection.find(query)
                 const cars = await cursor.toArray(cursor)
             }
             else if (page || size) {
-                // 0 --> skip: 0 get: 0-10(10): 
                 cars = await cursor.skip(page * size).limit(size).toArray();
             }
             else {
                 if (email) {
                     const query = { email: email };
-                    const cursor = inventroyCollection.find(query)
+                    const cursor = inventoryCollection.find(query)
                     cars = await cursor.toArray();
-
-                    // const result = await cursor.toArray(cursor)
-                    // res.send(result);
                 }
-
-                // cars = await cursor.toArray();
             }
 
             res.send(cars);
-            // }
         });
 
         // SINGLE CAR DETAILS 
         app.get('/inventory/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            const carDetails = await inventroyCollection.findOne(query);
+            const carDetails = await inventoryCollection.findOne(query);
             res.send(carDetails)
         })
 
         // ADD NEW CAR 
         app.post('/inventory', async (req, res) => {
             const newCar = req.body;
-            const addNewCar = await inventroyCollection.insertOne(newCar);
+            const addNewCar = await inventoryCollection.insertOne(newCar);
             res.send(addNewCar);
         })
 
@@ -99,23 +78,52 @@ async function run() {
         app.delete('/inventory/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            const deleteCar = await inventroyCollection.deleteOne(query);
+            const deleteCar = await inventoryCollection.deleteOne(query);
             res.send(deleteCar)
         })
 
         // PRODUCT COUNT 
         app.get('/totalCar', async (req, res) => {
-            const count = await inventroyCollection.estimatedDocumentCount();
+            const count = await inventoryCollection.estimatedDocumentCount();
             res.send({ count });
         });
 
+
+
         app.put('/inventory/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { quantity: ObjectId(id) };
-            console.log(id)
-            const updateQuantity = await inventroyCollection.updateOne(query);
-            res.send(updateQuantity)
+            const updateDetails = req.body;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true };
+
+            const updateManuallyQuantity = updateDetails.Quantity;
+            const updateDescription = updateDetails.Description;
+
+            const decraseQuantity = updateDetails.updateQuantity;
+
+            if (decraseQuantity) {
+                const updateData = {
+                    $set: {
+                        quantity: decraseQuantity
+                    }
+                };
+                const result = await inventoryCollection.updateOne(query, updateData, options);
+                res.send(result);
+            }
+
+            else if (updateManuallyQuantity) {
+                const updatedDoc = {
+                    $set: {
+                        quantity: updateManuallyQuantity,
+                        description: updateDescription
+                    }
+                };
+                const result = await inventoryCollection.updateOne(query, updatedDoc, options);
+                res.send(result);
+            }
+
         })
+
 
 
 
@@ -135,6 +143,23 @@ async function run() {
             const cursor = orderCollection.find(query)
             const cars = await cursor.toArray(cursor)
             res.send(cars);
+        })
+
+        // GET SPECIFIC ORDER WITH ID 
+        app.get('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const carDetails = await orderCollection.findOne(query);
+            res.send(carDetails)
+        })
+
+        // DELETE ORDER 
+        app.delete('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            // const query = { email: email };
+            const deleteOrder = await orderCollection.deleteOne(query);
+            res.send(deleteOrder)
         })
     }
 
