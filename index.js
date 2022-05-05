@@ -4,6 +4,8 @@ require('dotenv').config()
 
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const { decode } = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -13,10 +15,28 @@ app.use(cors())
 app.use(express.json());
 
 
+
+function verifyJWT(req, res, next) {
+    const header = req.headers.authorization;
+    if (!header) {
+        return res.status(401).send({ message: 'Unauthorized access' })
+    }
+    const token = header.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_SECRET_TOKEN,
+        (err, decoded) => {
+            if (err) {
+                return res.status(403).send({ message: "Forbidden access" })
+            }
+            req.decoded = decoded;
+            next();
+        }
+    )
+}
+
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.SECRET_KEY}@cluster0.9ntna.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
 
 async function run() {
     await client.connect()
@@ -26,8 +46,17 @@ async function run() {
 
 
     try {
+        /* --------------- USER ----------------*/
+        app.post('/login', async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_SECRET_TOKEN,
+                { expiresIn: '1d' }
+            );
+            res.send({ token })
+        })
 
-        /* --------------- INVENTORY ----------------*/
+
+        /* --------------- INVENTORY API ----------------*/
 
         // ALL CAR INVENTORY
         app.get('/inventory', async (req, res) => {
@@ -125,7 +154,7 @@ async function run() {
 
 
 
-        /* --------------- ORDER ----------------*/
+        /* --------------- ORDER API ----------------*/
 
         // NEW ORDER POST 
         app.post('/order', async (req, res) => {
@@ -135,12 +164,20 @@ async function run() {
         })
 
         // GET ORDER  
-        app.get('/order', async (req, res) => {
+        app.get('/order', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const email = req.query.email;
-            const query = { email: email };
-            const cursor = orderCollection.find(query)
-            const cars = await cursor.toArray(cursor)
-            res.send(cars);
+
+            if (email === decodedEmail) {
+                const query = { email: email };
+                const cursor = orderCollection.find(query)
+                const cars = await cursor.toArray(cursor)
+                res.send(cars);
+            }
+
+            else {
+                res.status(403).send({ message: "Forbidden access" })
+            }
         })
 
         // GET SPECIFIC ORDER WITH ID 
