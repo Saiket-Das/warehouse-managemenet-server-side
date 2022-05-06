@@ -86,6 +86,14 @@ async function run() {
             res.send(cars);
         });
 
+        // DELETE MULTIPLE CAR 
+        app.delete('/inventory', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const deleteCars = await inventoryCollection.deleteMany(query);
+            res.send(deleteCars)
+        })
+
         // SINGLE CAR DETAILS 
         app.get('/inventory/:id', async (req, res) => {
             const id = req.params.id;
@@ -101,7 +109,7 @@ async function run() {
             res.send(addNewCar);
         })
 
-        // DELETE CAR 
+        // DELETE ONE CAR 
         app.delete('/inventory/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
